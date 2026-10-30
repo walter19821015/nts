@@ -108,6 +108,7 @@
       font-size: 12px;
       font-weight: bold;
       cursor: pointer;
+      transition: background 0.2s;
     }
     .btn-copy:hover { background: #047857; }
     
@@ -192,8 +193,8 @@
   </div>
 
   <script>
-    // 你的自定义二级域名（国内直连无阻断）
-    const WORKER_SUB_API = "https://nts.walter19821015.ccwu.cc";
+    // 你的 Worker 后端独立专属域名（国内直连无阻断）
+    const WORKER_SUB_API = "https://ntshd.walter19821015.ccwu.cc";
 
     function generateSubscription() {
       const rawNodes = document.getElementById("nodes-input").value.trim();
@@ -206,10 +207,10 @@
       const encodedNodes = encodeURIComponent(rawNodes);
       const fullSubUrl = `${WORKER_SUB_API}/sub?nodes=${encodedNodes}`;
 
-      // 1. 填入输入框
+      // 1. 填入输入框供复制
       document.getElementById("sub-url-output").value = fullSubUrl;
 
-      // 2. 二维码直接存入标准 https 链接（小火箭扫码标准协议）
+      // 2. 生成标准订阅二维码
       const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&margin=2&data=${encodeURIComponent(fullSubUrl)}`;
       document.getElementById("qr-image").src = qrApiUrl;
 
