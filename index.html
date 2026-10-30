@@ -183,7 +183,7 @@
         </div>
         <div class="qr-info">
           <div>📱 <b>推荐方式：扫码即用</b></div>
-          <div>打开 <b>Shadowrocket (小火箭)</b> 或 <b>V2box</b>，点击右上角 <b>【扫码】</b> 对准左侧二维码直接导入，无需任何手动输入！</div>
+          <div>打开 <b>Shadowrocket (小火箭)</b> 或 <b>V2box</b>，点击右上角 <b>【扫码】</b> 对准左侧二维码直接导入。</div>
         </div>
       </div>
 
@@ -194,8 +194,8 @@
   </div>
 
   <script>
-    // 替换为您在第一步部署的 Worker 真实地址
-    const WORKER_SUB_API = "nts.walter19821015.workers.dev";
+    // 部署的真实 Worker 地址（确保包含协议头）
+    const WORKER_SUB_API = "https://nts.walter19821015.workers.dev";
 
     function generateSubscription() {
       const rawNodes = document.getElementById("nodes-input").value.trim();
@@ -204,25 +204,25 @@
         return;
       }
 
-      // 编码并拼接完整自适应订阅 URL
+      // 编码并拼接标准 https 订阅 URL
       const encodedNodes = encodeURIComponent(rawNodes);
       const fullSubUrl = `${WORKER_SUB_API}/sub?nodes=${encodedNodes}`;
 
-      // 1. 填入文本框
+      // 1. 填入输入框供复制
       document.getElementById("sub-url-output").value = fullSubUrl;
 
-      // 2. 实时生成二维码图片
-      const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=4&data=${encodeURIComponent(fullSubUrl)}`;
+      // 2. 为小火箭扫码构建专用 sub:// 协议（扫码直接触发订阅弹窗）
+      const scanCodePayload = `sub://${fullSubUrl.replace(/^https?:\/\//, '')}`;
+      const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&margin=4&data=${encodeURIComponent(scanCodePayload)}`;
+      
       document.getElementById("qr-image").src = qrApiUrl;
-
-      // 3. 显示结果区域
       document.getElementById("result-box").style.display = "block";
     }
 
     function copySubUrl() {
       const input = document.getElementById("sub-url-output");
       navigator.clipboard.writeText(input.value).then(() => {
-        alert("自适应订阅链接已复制！直接去客户端添加即可。");
+        alert("自适应订阅链接已复制！");
       });
     }
   </script>
