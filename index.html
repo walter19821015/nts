@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>节点优选一键自适应订阅生成器</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: radial-gradient(circle at top, #14233c 0%, #0a111a 100%);
+      color: #cbd5e1;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .card {
+      width: 100%;
+      max-width: 680px;
+      background: #0f1c2e;
+      border: 1px solid #1e3553;
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+    }
+    h1 {
+      font-size: 20px;
+      color: #ffffff;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .subtitle {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #93c5fd;
+      margin-bottom: 8px;
+    }
+    textarea {
+      width: 100%;
+      height: 180px;
+      background: #08121f;
+      border: 1px solid #1a3454;
+      border-radius: 10px;
+      padding: 12px;
+      color: #38bdf8;
+      font-family: monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      outline: none;
+      resize: vertical;
+      margin-bottom: 16px;
+    }
+    textarea:focus { border-color: #38bdf8; }
+    .btn-submit {
+      width: 100%;
+      background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+      border: none;
+      border-radius: 10px;
+      color: #ffffff;
+      padding: 13px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-submit:hover { opacity: 0.9; transform: translateY(-1px); }
+    .result-area {
+      margin-top: 20px;
+      display: none;
+      background: #08121f;
+      border: 1px solid #1e3a5f;
+      border-radius: 10px;
+      padding: 18px;
+    }
+    .sub-input-group {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      margin-bottom: 18px;
+    }
+    .sub-url {
+      flex: 1;
+      background: #0f1c2e;
+      border: 1px solid #23436b;
+      border-radius: 6px;
+      padding: 10px;
+      color: #a7f3d0;
+      font-size: 12px;
+      font-family: monospace;
+      outline: none;
+    }
+    .btn-copy {
+      background: #059669;
+      border: none;
+      color: #ffffff;
+      border-radius: 6px;
+      padding: 0 16px;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-copy:hover { background: #047857; }
+    
+    .qr-container {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      background: #0c1827;
+      border: 1px dashed #203f67;
+      border-radius: 8px;
+      padding: 14px;
+    }
+    .qr-box {
+      width: 120px;
+      height: 120px;
+      background: #ffffff;
+      border-radius: 6px;
+      padding: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .qr-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .qr-info {
+      font-size: 12px;
+      color: #94a3b8;
+      line-height: 1.6;
+    }
+    .qr-info b {
+      color: #38bdf8;
+    }
+    .tips {
+      margin-top: 14px;
+      font-size: 11px;
+      color: #64748b;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h1><span>⚡</span> 节点优选一键自适应订阅生成器</h1>
+    <p class="subtitle">支持【链接复制】与【二维码扫码】双模式，小火箭、V2box、v2rayN、Clash 全通用。</p>
+
+    <label>粘贴优选节点（直接粘贴聚合面板复制的任意内容）：</label>
+    <textarea id="nodes-input" placeholder="请粘贴优选 IP 列表，例如：
+104.17.22.231:443#CF 移动优选
+141.11.86.150:8443#台湾
+168.107.36.254:443#韩国 126ms"></textarea>
+
+    <button class="btn-submit" onclick="generateSubscription()">✨ 一键生成全通用自适应订阅</button>
+
+    <div class="result-area" id="result-box">
+      <div style="font-size: 13px; font-weight: 600; color: #34d399;">✔ 订阅已生成完毕：</div>
+
+      <!-- 方式一：URL 网址导入 -->
+      <div class="sub-input-group">
+        <input type="text" id="sub-url-output" class="sub-url" readonly>
+        <button class="btn-copy" onclick="copySubUrl()">复制链接</button>
+      </div>
+
+      <!-- 方式二：二维码扫码导入 -->
+      <div class="qr-container">
+        <div class="qr-box">
+          <img id="qr-image" src="" alt="订阅二维码">
+        </div>
+        <div class="qr-info">
+          <div>📱 <b>推荐方式：扫码即用</b></div>
+          <div>打开 <b>Shadowrocket (小火箭)</b> 或 <b>V2box</b>，点击右上角 <b>【扫码】</b> 对准左侧二维码直接导入，无需任何手动输入！</div>
+        </div>
+      </div>
+
+      <div class="tips">
+        💡 <b>桌面端说明：</b> 电脑端 (v2rayN、Clash Meta / Verge) 点击上方“复制链接”，直接粘贴到客户端添加订阅配置即可。
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 替换为您在第一步部署的 Worker 真实地址
+    const WORKER_SUB_API = "nts.walter19821015.workers.dev";
+
+    function generateSubscription() {
+      const rawNodes = document.getElementById("nodes-input").value.trim();
+      if (!rawNodes) {
+        alert("请先粘贴优选 IP 列表！");
+        return;
+      }
+
+      // 编码并拼接完整自适应订阅 URL
+      const encodedNodes = encodeURIComponent(rawNodes);
+      const fullSubUrl = `${WORKER_SUB_API}/sub?nodes=${encodedNodes}`;
+
+      // 1. 填入文本框
+      document.getElementById("sub-url-output").value = fullSubUrl;
+
+      // 2. 实时生成二维码图片
+      const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=4&data=${encodeURIComponent(fullSubUrl)}`;
+      document.getElementById("qr-image").src = qrApiUrl;
+
+      // 3. 显示结果区域
+      document.getElementById("result-box").style.display = "block";
+    }
+
+    function copySubUrl() {
+      const input = document.getElementById("sub-url-output");
+      navigator.clipboard.writeText(input.value).then(() => {
+        alert("自适应订阅链接已复制！直接去客户端添加即可。");
+      });
+    }
+  </script>
+</body>
+</html>
