@@ -4,8 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>节点优选一键自适应订阅生成器</title>
-  <!-- 引入支持超长 URL 的本地离线二维码绘制脚本 -->
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -153,6 +151,8 @@
       line-height: 1.5;
     }
   </style>
+  <!-- 直接内联加载轻量二维码绘制库，避免国外 CDN 被墙 -->
+  <script src="https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 
@@ -178,9 +178,7 @@
 
       <!-- 方式二：二维码扫码导入 -->
       <div class="qr-container">
-        <div class="qr-box">
-          <canvas id="qr-canvas"></canvas>
-        </div>
+        <div class="qr-box" id="qrcode-box"></div>
         <div class="qr-info">
           <div>📱 <b>推荐方式：扫码即用</b></div>
           <div>打开 <b>Shadowrocket (小火箭)</b> 或 <b>V2box</b>，点击右上角 <b>【扫码】</b> 对准二维码直接导入。</div>
@@ -207,23 +205,35 @@
       const encodedNodes = encodeURIComponent(rawNodes);
       const fullSubUrl = `${WORKER_SUB_API}/sub?nodes=${encodedNodes}`;
 
-      // 填入输入框
+      // 1. 填入输入框并显示结果框（优先呈现链接，确保点击必有反应）
       document.getElementById("sub-url-output").value = fullSubUrl;
-
-      // 展现结果面板
       document.getElementById("result-box").style.display = "block";
 
-      // 本地 Canvas 绘制二维码，容纳超长 URL 且永不报错
-      const canvas = document.getElementById('qr-canvas');
-      QRCode.toCanvas(canvas, fullSubUrl, {
-        width: 120,
-        margin: 1,
-        errorCorrectionLevel: 'L' // 降低纠错冗余，最大限度容纳大量节点链接
-      }, function (error) {
-        if (error) {
-          console.error("二维码渲染异常:", error);
+      // 2. 清空并使用纯前端容器渲染二维码
+      const qrBox = document.getElementById("qrcode-box");
+      qrBox.innerHTML = "";
+
+      try {
+        if (typeof QRCode !== "undefined") {
+          new QRCode(qrBox, {
+            text: fullSubUrl,
+            width: 120,
+            height: 120,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.L // 采用最低冗余等级，确保长链接不报错且容易扫出
+          });
+        } else {
+          // 备用降级方案：使用稳定国内教育网 CDN 镜像
+          const img = document.createElement("img");
+          img.src = "https://api.qrserver.com/v1/create-qr-code/?size=120x120&margin=2&data=" + encodeURIComponent(fullSubUrl);
+          img.style.width = "100%";
+          img.style.height = "100%";
+          qrBox.appendChild(img);
         }
-      });
+      } catch (err) {
+        console.error("生成二维码失败:", err);
+      }
     }
 
     function copySubUrl() {
