@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>节点优选一键自适应订阅生成器</title>
+  <!-- 引入纯本地运行的离线二维码生成库，避免外部 API 挂掉裂图 -->
+  <script src="https://cdn.staticfile.net/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -132,10 +134,9 @@
       justify-content: center;
       flex-shrink: 0;
     }
-    .qr-box img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
+    .qr-box canvas, .qr-box img {
+      width: 100% !important;
+      height: 100% !important;
     }
     .qr-info {
       font-size: 12px;
@@ -177,9 +178,7 @@
 
       <!-- 方式二：二维码扫码导入 -->
       <div class="qr-container">
-        <div class="qr-box">
-          <img id="qr-image" src="" alt="订阅二维码">
-        </div>
+        <div class="qr-box" id="qrcode"></div>
         <div class="qr-info">
           <div>📱 <b>推荐方式：扫码即用</b></div>
           <div>打开 <b>Shadowrocket (小火箭)</b> 或 <b>V2box</b>，点击右上角 <b>【扫码】</b> 对准二维码直接导入。</div>
@@ -193,8 +192,8 @@
   </div>
 
   <script>
-    // 你的 Worker 后端独立专属域名（国内直连无阻断）
     const WORKER_SUB_API = "https://ntshd.walter19821015.ccwu.cc";
+    let qrcodeInstance = null;
 
     function generateSubscription() {
       const rawNodes = document.getElementById("nodes-input").value.trim();
@@ -203,16 +202,23 @@
         return;
       }
 
-      // 编码并拼接标准 https 订阅 URL
       const encodedNodes = encodeURIComponent(rawNodes);
       const fullSubUrl = `${WORKER_SUB_API}/sub?nodes=${encodedNodes}`;
 
       // 1. 填入输入框供复制
       document.getElementById("sub-url-output").value = fullSubUrl;
 
-      // 2. 生成标准订阅二维码
-      const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&margin=2&data=${encodeURIComponent(fullSubUrl)}`;
-      document.getElementById("qr-image").src = qrApiUrl;
+      // 2. 本地直接渲染二维码，彻底告别外部 API 裂图问题
+      const qrBox = document.getElementById("qrcode");
+      qrBox.innerHTML = "";
+      qrcodeInstance = new QRCode(qrBox, {
+        text: fullSubUrl,
+        width: 120,
+        height: 120,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.M
+      });
 
       // 3. 显示结果区域
       document.getElementById("result-box").style.display = "block";
