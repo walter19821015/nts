@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>节点优选一键自适应订阅生成器</title>
+  <!-- 引入支持超长 URL 的本地离线二维码绘制脚本 -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -132,10 +134,9 @@
       justify-content: center;
       flex-shrink: 0;
     }
-    .qr-box img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
+    .qr-box canvas {
+      width: 100% !important;
+      height: 100% !important;
     }
     .qr-info {
       font-size: 12px;
@@ -178,7 +179,7 @@
       <!-- 方式二：二维码扫码导入 -->
       <div class="qr-container">
         <div class="qr-box">
-          <img id="qr-img" src="" alt="订阅二维码">
+          <canvas id="qr-canvas"></canvas>
         </div>
         <div class="qr-info">
           <div>📱 <b>推荐方式：扫码即用</b></div>
@@ -202,25 +203,27 @@
         return;
       }
 
-      // 拼接标准订阅 URL
+      // 编码并拼接订阅链接
       const encodedNodes = encodeURIComponent(rawNodes);
       const fullSubUrl = `${WORKER_SUB_API}/sub?nodes=${encodedNodes}`;
 
-      // 1. 填入输入框
+      // 填入输入框
       document.getElementById("sub-url-output").value = fullSubUrl;
 
-      // 2. 先显示结果区域（确保无论如何都不会卡死在界面上）
+      // 展现结果面板
       document.getElementById("result-box").style.display = "block";
 
-      // 3. 采用 Cloudflare 官方 cdnjs 极速渲染二维码
-      const qrImg = document.getElementById("qr-img");
-      qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&margin=2&data=${encodeURIComponent(fullSubUrl)}`;
-      
-      // 容错备用线路（若首选接口慢，自动切换快速备用源）
-      qrImg.onerror = function() {
-        this.onerror = null;
-        this.src = `https://quickchart.io/qr?size=250&text=${encodeURIComponent(fullSubUrl)}`;
-      };
+      // 本地 Canvas 绘制二维码，容纳超长 URL 且永不报错
+      const canvas = document.getElementById('qr-canvas');
+      QRCode.toCanvas(canvas, fullSubUrl, {
+        width: 120,
+        margin: 1,
+        errorCorrectionLevel: 'L' // 降低纠错冗余，最大限度容纳大量节点链接
+      }, function (error) {
+        if (error) {
+          console.error("二维码渲染异常:", error);
+        }
+      });
     }
 
     function copySubUrl() {
